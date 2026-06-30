@@ -278,7 +278,7 @@ class Score:
     def __init__(self):
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
-        self.value = 0
+        self.value = 9999
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         self.rect = self.image.get_rect()
         self.rect.center = 100, HEIGHT-50
@@ -459,13 +459,24 @@ def main():
             for bomb in bomb_lst:
                 exps.add(Explosion(bomb, 50))    
 
-        for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
-            life.num -= 1
-            # 残機を1減らす
-
-            if life.num > 0: #追加
+        for bomb in pg.sprite.spritecollide(bird, bombs, True):
+        # EMPで無効化された爆弾
+            if bomb.state == "inactive":
                 continue
-            bird.change_img(8, screen)  # こうかとん悲しみエフェクト
+
+            # 無敵状態ではダメージを受けず，爆弾を破壊
+            if bird.state == "hyper":
+                exps.add(Explosion(bomb, 50))
+                score.value += 1
+                continue
+
+            # 通常時は残機を減らす
+            life.num -= 1
+
+            if life.num > 0:
+                continue
+
+            bird.change_img(8, screen)
             score.update(screen)
             life.update(screen)
             pg.display.update()
