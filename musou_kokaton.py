@@ -241,7 +241,29 @@ class Enemy(pg.sprite.Sprite):
             self.state = "stop"
         self.rect.move_ip(self.vx, self.vy)
 
+class Life:#追加
+    """
+    こうかとんの残機（ライフ）に関するクラス
+    """
+    def __init__(self, num: int):
+        self.num = num
+        self.image = pg.Surface((40, 40), pg.SRCALPHA)
+        points = [(16*math.sin(t/100)**3 +20, -(13*math.cos(t/100)-5*math.cos(2*t/100)-2*math.cos(3*t/100)-math.cos(4*t/100)) +20) for t in range(0, 628)]
+        pg.draw.polygon(self.image, (255, 0, 0), points)
 
+    def update(self, screen: pg.Surface):
+        # 画像の幅と高さの半分を計算
+        half_w = self.image.get_width() // 2
+        half_h = self.image.get_height() // 2
+
+        for i in range(self.num):
+            center_x = WIDTH - 50 - (i * 50)
+            center_y = HEIGHT - 50
+            screen.blit(self.image, (center_x - half_w, center_y - half_h))
+
+        
+
+  
 class Score:
     """
     打ち落とした爆弾，敵機の数をスコアとして表示するクラス
@@ -251,7 +273,7 @@ class Score:
     def __init__(self):
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
-        self.value = 0
+        self.value = 111111111111110
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         self.rect = self.image.get_rect()
         self.rect.center = 100, HEIGHT-50
@@ -358,13 +380,17 @@ def main():
     bg_img = pg.image.load(f"fig/pg_bg.jpg")
     score = Score()
 
+    life = Life(3)  # 残機3追加
     bird = Bird(3, (900, 400))
     bombs = pg.sprite.Group()
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+
+
     shields = pg.sprite.Group() # shieldsグループを追加
     gravities = pg.sprite.Group()
+
 
     tmr = 0
     clock = pg.time.Clock()
@@ -421,6 +447,18 @@ def main():
             for bomb in bomb_lst:
                 exps.add(Explosion(bomb, 50))    
 
+        for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
+            life.num -= 1
+            # 残機を1減らす
+
+            if life.num > 0: #追加
+                continue
+            bird.change_img(8, screen)  # こうかとん悲しみエフェクト
+            score.update(screen)
+            life.update(screen)
+            pg.display.update()
+            time.sleep(2)
+            return
         # 重力場と衝突した敵機を撃破
         for emy in pg.sprite.groupcollide(emys, gravities, True, False).keys():
             exps.add(Explosion(emy, 100))
@@ -456,6 +494,7 @@ def main():
         exps.update()
         exps.draw(screen)
         score.update(screen)
+        life.update(screen)#追加
         shields.update() # 防御壁の状態を更新
         shields.draw(screen) # 防御壁を描画
         pg.display.update()
