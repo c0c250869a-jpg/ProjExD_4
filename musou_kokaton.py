@@ -126,7 +126,7 @@ class Bomb(pg.sprite.Sprite):
         self.rect.centerx = emy.rect.centerx
         self.rect.centery = emy.rect.centery+emy.rect.height//2
         self.speed = 6
-
+        self.state = "active"
     def update(self):
         """
         爆弾を速度ベクトルself.vx, self.vyに基づき移動させる
@@ -242,6 +242,31 @@ class Score:
         screen.blit(self.image, self.rect)
 
 
+class Emp:
+    def __init__(self,emys,bombs):
+        self.image = pg.Surface((WIDTH,HEIGHT))
+        self.image.set_alpha(128)
+        self.image.fill((255,255,0))
+
+
+        for emy in emys:
+            emy.interval = float("inf")
+            emy.image = pg.transform.laplacian(emy.image)
+        
+        for bomb in bombs:
+            bomb.speed /= 2
+            bomb.state = "inactive" 
+
+    def update(self,screen):
+        screen.blit(self.image,(0,0))
+        pg.display.update()
+        time.sleep(0.05)
+        return
+
+
+
+
+
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -263,6 +288,13 @@ def main():
                 return 0
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beams.add(Beam(bird))
+            #EMPの条件判定
+            if score.value > 20 and (event.type == pg.KEYDOWN and event.key == pg.K_e):
+                score.value -= 20
+                emp = Emp(emys,bombs)
+                emp.update(screen)
+
+
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
@@ -283,11 +315,14 @@ def main():
             score.value += 1  # 1点アップ
 
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
-            bird.change_img(8, screen)  # こうかとん悲しみエフェクト
-            score.update(screen)
-            pg.display.update()
-            time.sleep(2)
-            return
+            if bomb.state == "inactive":
+                bomb.kill()
+            else:
+                bird.change_img(8, screen)  # こうかとん悲しみエフェクト
+                score.update(screen)
+                pg.display.update()
+                time.sleep(2)
+                return
 
         bird.update(key_lst, screen)
         beams.update()
