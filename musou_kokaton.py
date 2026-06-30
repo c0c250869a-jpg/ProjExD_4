@@ -265,7 +265,7 @@ class Shield(pg.sprite.Sprite):
         angle = math.degrees(math.atan2(-vy, vx))
         self.image = pg.transform.rotate(self.image, angle)
 
-        self.rect = self.image.get_rect()
+        self.rect = self.image.get_rect() # 防御壁のRectを取得
 
         # こうかとんの前に配置
         self.rect.center = (
